@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANYWORDLE</title>
+  <script type="text/javascript">
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, "clarity", "script", "qk8jzgjvf7");
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 2.5rem;
+      margin: 20px 0;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .board {
+      display: flex;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+      margin-bottom: 30px;
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: 100%;
+      /* 防止超出容器 */
+      overflow-x: auto;
+      /* 允许横向滚动 */
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .tile {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: bold;
+      background-color: white;
+      border: 2px solid #d3d6da;
+      text-transform: uppercase;
+      transition: transform 0.1s ease;
+    }
+
+    .tile.filled {
+      border-color: #939598;
+    }
+
+    .tile.correct {
+      background-color: #6aaa64;
+      border-color: #6aaa64;
+      color: white;
+    }
+
+    .tile.present {
+      background-color: #c9b458;
+      border-color: #c9b458;
+      color: white;
+    }
+
+    .tile.absent {
+      background-color: #787c7e;
+      border-color: #787c7e;
+      color: white;
+    }
+
+    .tile.invalid {
+      background-color: #ff4d4d;
+      border-color: #ff4d4d;
+      color: white;
+    }
+
+    .tile.flip {
+      animation: flip 0.5s ease forwards;
+    }
+
+    @keyframes flip {
+      0% {
+        transform: rotateX(0);
+      }
+
+      45% {
+        transform: rotateX(90deg);
+      }
+
+      55% {
+        transform: rotateX(90deg);
+      }
+
+      100% {
+        transform: rotateX(0);
+      }
+    }
+
+    .keyboard {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .key {
+      flex: 1;
+      max-width: 40px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 3px;
+      background-color: #d3d6da;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      -webkit-user-select: none; /* Safari兼容性 */
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .key.wide {
+      flex: 1.5;
+      max-width: 65px;
+      font-size: 0.7rem;
+    }
+
+    .key:hover {
+      background-color: #bbbdc1;
+    }
+
+    .key.correct {
+      background-color: #6aaa64;
+      color: white;
+    }
+
+    .key.present {
+      background-color: #c9b458;
+      color: white;
+    }
+
+    .key.absent {
+      background-color: #787c7e;
+      color: white;
+    }
+
+    .message {
+      height: 30px;
+      margin: 10px 0;
+      font-weight: bold;
+      text-align: center;
+      color: #333;
+    }
+
+    .win {
+      color: #6aaa64;
+    }
+
+    .lose {
+      color: #c9b458;
+    }
+
+    /* 按钮样式 */
+    .game-button {
+      position: absolute;
+      padding: 8px 16px;
+      background-color: #6aaa64;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 1000;
+      top: 10px;
+      text-decoration: none; /* 去除链接下划线 */
+    }
+
+    .game-button:hover {
+      opacity: 0.9;
+    }
+
+    .game-button.restart {
+      background-color: #6aaa64;
+      right: 10px;
+    }
+
+    .game-button.give-up {
+      background-color: #787c7e;
+      right: 10px;
+    }
+
+    .game-button.debug {
+      background-color: #c9b458;
+      right: 200px;
+    }
+
+    /* 分享按钮样式 */
+    .share-container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .share {
+      padding: 10px 20px;
+      background-color: #6aaa64;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .share:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 500px) {
+      .tile {
+        font-size: 1.5rem;
+      }
+
+      .key {
+        height: 40px;
+        max-width: 25px;
+        font-size: 0.8rem;
+      }
+
+      .key.wide {
+        max-width: 45px;
+        font-size: 0.6rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>ANYWORDLE</h1>
+  </header>
+
+  <div class="game-container">
+    <div class="message" id="message"></div>
+    <div class="board" id="board">
+      <!-- 游戏板将通过JavaScript生成 -->
+    </div>
+
+    <div class="keyboard">
+      <div class="keyboard-row">
+        <div class="key" data-key="Q">Q</div>
+        <div class="key" data-key="W">W</div>
+        <div class="key" data-key="E">E</div>
+        <div class="key" data-key="R">R</div>
+        <div class="key" data-key="T">T</div>
+        <div class="key" data-key="Y">Y</div>
+        <div class="key" data-key="U">U</div>
+        <div class="key" data-key="I">I</div>
+        <div class="key" data-key="O">O</div>
+        <div class="key" data-key="P">P</div>
+      </div>
+      <div class="keyboard-row">
+        <div class="key" data-key="A">A</div>
+        <div class="key" data-key="S">S</div>
+        <div class="key" data-key="D">D</div>
+        <div class="key" data-key="F">F</div>
+        <div class="key" data-key="G">G</div>
+        <div class="key" data-key="H">H</div>
+        <div class="key" data-key="J">J</div>
+        <div class="key" data-key="K">K</div>
+        <div class="key" data-key="L">L</div>
+      </div>
+      <div class="keyboard-row">
+        <div class="key wide" data-key="Backspace">⌫</div>
+        <div class="key" data-key="Z">Z</div>
+        <div class="key" data-key="X">X</div>
+        <div class="key" data-key="C">C</div>
+        <div class="key" data-key="V">V</div>
+        <div class="key" data-key="B">B</div>
+        <div class="key" data-key="N">N</div>
+        <div class="key" data-key="M">M</div>
+        <div class="key wide" data-key="Enter">ENTER</div>
+      </div>
+    </div>
+  </div>
+  by <a href="https://ts8zs.com">ts8zs.com</a> with qwen-coder
+  <script>
+    // 游戏配置
+
+    const COMMON_WORDS_FILE = "commonwords.txt";
+    const ALL_WORDS_FILE = "allwords.txt";
+    let commonWords = []; // 常用词库（用于出题）
+    let allWords = []; // 全部词库（用于验证）
+    // 游戏状态
+    let targetWord = '';
+    let currentRow = 0;
+    let currentTile = 0;
+    let gameOver = false;
+    let wordsLoaded = false;  // 标记单词是否已加载
+    let isAnimating = false;  // 标记是否正在播放动画
+
+    // 每日谜题状态
+    let dailyPuzzleDate = '';  // 当前每日谜题的日期
+    let puzzleCompleted = false;  // 标记当日谜题是否已完成
+    let isDailyPuzzle = true;  // 标记是否为每日谜题模式
+
+    // 保存游戏状态到localStorage
+    function saveGameState() {
+      // 只在游戏进行中保存状态
+      if (gameOver) return;
+
+      const gameState = {
+        targetWord,
+        currentRow,
+        currentTile,
+        gameOver,
+        dailyPuzzleDate,
+        puzzleCompleted,
+        isDailyPuzzle,
+        // 保存所有行的数据
+        rows: []
+      };
+
+      // 保存每行的字母和状态
+      for (let i = 0; i <= currentRow; i++) {
+        const row = document.getElementById(`row-${i}`);
+        if (row) {
+          const rowData = {
+            tiles: []
+          };
+
+          // 保存每个格子的内容和状态
+          for (let j = 0; j < row.children.length; j++) {
+            const tile = document.getElementById(`tile-${i}-${j}`);
+            if (tile) {
+              rowData.tiles.push({
+                text: tile.textContent,
+                classes: Array.from(tile.classList)
+              });
+            }
+          }
+
+          gameState.rows.push(rowData);
+        }
+      }
+
+      // 保存键盘状态
+      const keyboardState = {};
+      document.querySelectorAll('.key').forEach(key => {
+        keyboardState[key.dataset.key] = Array.from(key.classList);
+      });
+      gameState.keyboardState = keyboardState;
+
+      localStorage.setItem('wordleGameState', JSON.stringify(gameState));
+    }
+
+    // 从localStorage恢复游戏状态
+    function restoreGameState() {
+      const savedState = localStorage.getItem('wordleGameState');
+      if (!savedState) return false;
+
+      try {
+        const gameState = JSON.parse(savedState);
+
+        // 如果是已结束的游戏，不恢复状态
+        if (gameState.gameOver) {
+          clearGameState();
+          return false;
+        }
+
+        // 恢复基本状态
+        targetWord = gameState.targetWord;
+        currentRow = gameState.currentRow;
+        currentTile = gameState.currentTile;
+        gameOver = gameState.gameOver;
+        dailyPuzzleDate = gameState.dailyPuzzleDate;
+        puzzleCompleted = gameState.puzzleCompleted;
+        isDailyPuzzle = gameState.isDailyPuzzle;
+
+        // 恢复游戏板
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+
+        for (let i = 0; i < 10; i++) {
+          const row = document.createElement("div");
+          row.classList.add("row");
+          row.id = `row-${i}`;
+
+          if (i < gameState.rows.length) {
+            // 恢复已有行
+            const rowData = gameState.rows[i];
+            
+            for (let j = 0; j < rowData.tiles.length; j++) {
+              const tileData = rowData.tiles[j];
+              const tile = document.createElement("div");
+              tile.classList.add(...tileData.classes);
+              tile.id = `tile-${i}-${j}`;
+              tile.textContent = tileData.text;
+              row.appendChild(tile);
+            }
+            
+            // 更新网格布局
+            row.style.gridTemplateColumns = `repeat(${rowData.tiles.length}, 1fr)`;
+          } else {
+            // 创建新行（初始状态）
+            const tile = document.createElement("div");
+            tile.classList.add("tile");
+            tile.id = `tile-${i}-0`;
+            row.appendChild(tile);
+            
+            // 设置初始网格布局
+            row.style.gridTemplateColumns = "repeat(1, 1fr)";
+          }
+
+          board.appendChild(row);
+        }
+
+        // 恢复键盘状态
+        if (gameState.keyboardState) {
+          Object.keys(gameState.keyboardState).forEach(keyValue => {
+            const keyElement = document.querySelector(`.key[data-key="${keyValue}"]`);
+            if (keyElement && gameState.keyboardState[keyValue]) {
+              keyElement.className = ''; // 清除现有类
+              keyElement.classList.add(...gameState.keyboardState[keyValue]);
+            }
+          });
+        }
+
+        // 更新游戏模式信息
+        updateGameModeMessage();
+
+        return true;
+      } catch (e) {
+        console.error('恢复游戏状态失败:', e);
+        return false;
+      }
+    }
+
+    // 清除保存的游戏状态
+    function clearGameState() {
+      localStorage.removeItem('wordleGameState');
+    }
+
+    // 初始化游戏
+    async function initGame() {
+      // 优先加载单词库
+      if (!wordsLoaded) {
+        // 从两个文件并行加载单词
+        const [common, all] = await Promise.all([
+          loadWordsFromFile(COMMON_WORDS_FILE),
+          loadWordsFromFile(ALL_WORDS_FILE)
+        ]);
+
+        commonWords = common;
+        allWords = all;
+        wordsLoaded = true;
+
+        // 如果任一词库为空，显示错误消息
+        if (commonWords.length === 0 || allWords.length === 0) {
+          showMessage('Failed to load word list, please check file format', 'lose');
+          return;
+        }
+      }
+
+      // 检查URL参数中是否有puzzle参数和日期参数
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // 判断是否存在URL参数
+      const hasUrlParams = urlParams.has('p') || urlParams.has('d');
+
+      // 如果没有URL参数，才尝试恢复保存的状态
+      if (!hasUrlParams) {
+        const hasRestoredState = restoreGameState();
+        if (hasRestoredState) {
+          // 如果成功恢复了状态，重新绑定事件并返回
+          document.addEventListener('keydown', handleKeyPress);
+          document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', () => {
+              handleVirtualKeyPress(key.dataset.key);
+            });
+          });
+          return;
+        }
+      }
+      const puzzleParam = urlParams.get('p');
+      const dateParam = urlParams.get('d');
+      
+      // 如果有日期参数，优先使用日期参数（忽略每日谜题是否完成的检查）
+      if (dateParam) {
+        dailyPuzzleDate = dateParam;
+        isDailyPuzzle = true;
+        targetWord = getDailyPuzzleAnswer(dateParam, commonWords);
+        // console.log('目标单词(来自日期):', targetWord);
+      }
+      // 否则，如果有puzzle参数，则使用该参数作为目标单词
+      else if (puzzleParam) {
+        const unscrambledWord = caesarDecipher(puzzleParam, 3); // 使用位移3的凯撒密码解密
+        if (unscrambledWord && unscrambledWord.match(/^[A-Z]+$/)) {
+          targetWord = unscrambledWord;
+          isDailyPuzzle = false; // 标记为随机谜题模式
+          // console.log('目标单词(来自链接):', targetWord);
+        } else {
+          console.error('Invalid puzzle parameter in URL');
+        }
+      }
+
+      // 检查是否已完成当日谜题（仅在没有通过URL指定单词时）
+      if (!targetWord) {
+        if (!dailyPuzzleDate) {  // 如果日期还未设置（没有日期参数的情况）
+          dailyPuzzleDate = getCurrentUTC8Date();
+        }
+        puzzleCompleted = isPuzzleCompletedForToday();
+
+        // 默认使用每日谜题（仅在没有通过URL指定单词时）
+        isDailyPuzzle = true;
+        
+        // 选择目标单词
+        if (isDailyPuzzle && !puzzleCompleted) {
+          // 使用每日谜题答案
+          targetWord = getDailyPuzzleAnswer(dailyPuzzleDate, commonWords);
+        } else {
+          // 使用随机谜题答案或在每日谜题完成后使用随机谜题
+          targetWord = commonWords[Math.floor(Math.random() * commonWords.length)];
+          isDailyPuzzle = false; // 标记为随机谜题模式
+        }
+      }
+
+      // console.log('目标单词:', targetWord); // 用于调试
+
+      // 创建游戏板
+      createBoard();
+
+      // 显示游戏模式信息
+      updateGameModeMessage();
+
+      // 绑定事件
+      document.addEventListener('keydown', handleKeyPress);
+
+      // 绑定虚拟键盘事件
+      document.querySelectorAll('.key').forEach(key => {
+        key.addEventListener('click', () => {
+          handleVirtualKeyPress(key.dataset.key);
+        });
+      });
+    }
+
+    // 更新游戏模式提示信息
+    function updateGameModeMessage() {
+      const dateStr = dailyPuzzleDate;
+      if (isDailyPuzzle) {
+        if (puzzleCompleted) {
+          showMessage(`Daily Puzzle ${dailyPuzzleDate} (Completed)`, 'win');
+        } else {
+          showMessage(`Daily Puzzle ${dailyPuzzleDate}`, 'win');
+        }
+      } else {
+        showMessage('Random Puzzle', 'win');
+      }
+    }
+
+    // 切换游戏模式
+    function toggleGameMode() {
+      if (isDailyPuzzle && puzzleCompleted) {
+        showMessage("You've already completed today's puzzle!", 'lose');
+        return;
+      }
+
+      isDailyPuzzle = !isDailyPuzzle;
+      restartGame();
+    }
+
+    // 创建游戏板
+    function createBoard() {
+      const board = document.getElementById("board");
+      board.innerHTML = "";
+
+      for (let i = 0; i < 10; i++) {
+        const row = document.createElement("div");
+        row.classList.add("row");
+        row.id = `row-${i}`;
+
+        // 初始只显示第一个格子
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.id = `tile-${i}-0`;
+        row.appendChild(tile);
+
+        // 设置初始网格布局
+        row.style.gridTemplateColumns = "repeat(1, 1fr)";
+
+        board.appendChild(row);
+      }
+
+      // 重置当前行和当前格子计数器
+      currentRow = 0;
+      currentTile = 0;
+    }
+
+    // 处理物理键盘输入
+    function handleKeyPress(e) {
+      if (gameOver || isAnimating) return;  // 添加对动画状态的检查
+
+      const key = e.key.toUpperCase();
+      // 处理粘贴操作
+      if (e.ctrlKey && key === 'V') {
+        handlePaste();
+      }
+      // 处理字母输入
+      else if (/^[A-Z]$/.test(key)) {
+        addLetter(key);
+      }
+      // 处理退格键
+      else if (key === 'BACKSPACE') {
+        removeLetter();
+      }
+      // 处理回车键
+      else if (key === 'ENTER' && currentTile >= 1) {  // 至少输入一个字母即可提交
+        e.preventDefault(); // 阻止默认的回车行为
+        submitGuess();
+      }
+    }
+
+    // 处理粘贴操作
+    async function handlePaste() {
+      try {
+        const text = await navigator.clipboard.readText();
+        const letters = text.toUpperCase().replace(/[^A-Z]/g, "");
+
+        // 添加每个字母
+        for (const letter of letters) {
+          if (/^[A-Z]$/.test(letter)) {
+            addLetter(letter);
+            // 添加小延迟以获得更好的视觉效果
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+        }
+      } catch (err) {
+        console.error("粘贴操作失败:", err);
+      }
+    }
+
+    // 处理虚拟键盘输入
+    function handleVirtualKeyPress(key) {
+      if (gameOver || isAnimating) return;  // 添加对动画状态的检查
+
+      if (key === 'Enter') {
+        if (currentTile >= 1) {  // 至少输入一个字母即可提交
+          submitGuess();
+        }
+      } else if (key === 'Backspace') {
+        if (currentTile > 0) {
+          removeLetter();
+        }
+      } else {
+        if (/^[A-Z]$/.test(key)) {
+          addLetter(key);
+        }
+      }
+    }
+
+    // 添加字母到当前格子
+    function addLetter(letter) {
+      const row = document.getElementById(`row-${currentRow}`);
+
+      // 确保当前格子存在
+      if (currentTile >= row.children.length) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.id = `tile-${currentRow}-${row.children.length}`;
+        row.appendChild(tile);
+      }
+
+      // 获取当前格子并填充字母
+      const tile = document.getElementById(
+        `tile-${currentRow}-${currentTile}`
+      );
+      tile.textContent = letter;
+      tile.classList.add("filled");
+
+      // 增加一个空格子用于提示
+      if (currentTile + 1 >= row.children.length) {
+        const newTile = document.createElement("div");
+        newTile.classList.add("tile");
+        newTile.id = `tile-${currentRow}-${row.children.length}`;
+        row.appendChild(newTile);
+
+        // 更新网格布局
+        row.style.gridTemplateColumns = `repeat(${row.children.length}, 1fr)`;
+      }
+
+      currentTile++;
+      
+      // 保存游戏状态
+      saveGameState();
+    }
+
+    // 删除当前行的最后一个字母
+    function removeLetter() {
+      if (currentTile > 0) {
+        currentTile--;
+        const tile = document.getElementById(
+          `tile-${currentRow}-${currentTile}`
+        );
+        tile.textContent = "";
+        tile.classList.remove("filled");
+      }
+      // 移除当前行最后一个空格子
+      removeEmptyTile();
+      
+      // 保存游戏状态
+      saveGameState();
+    }
+
+    // 移除当前行最后一个空格子
+    function removeEmptyTile() {
+      const row = document.getElementById(`row-${currentRow}`);
+
+      // 如果最后一个格子是空的，且不是唯一的格子，则移除它
+      if (row.children.length > currentTile && row.children.length > 1) {
+        row.removeChild(row.lastChild);
+        // 更新网格布局
+        row.style.gridTemplateColumns = `repeat(${row.children.length}, 1fr)`;
+      }
+    }
+
+    // 删除指定行的所有空白格子，只保留有字母的格子
+    function removeEmptyTilesInRow(rowId) {
+      const row = document.getElementById(`row-${rowId}`);
+
+      // 从后往前遍历，避免删除过程中索引变化的问题
+      for (let i = row.children.length - 1; i >= 0; i--) {
+        const tile = row.children[i];
+        // 如果格子是空的且不是唯一的格子，则删除它
+        if (!tile.textContent && row.children.length > 1) {
+          row.removeChild(tile);
+        }
+      }
+
+      // 如果删除了格子，需要更新网格布局
+      if (row.children.length > 0) {
+        row.style.gridTemplateColumns = `repeat(${row.children.length}, 1fr)`;
+      }
+    }
+
+    // 提交猜测
+    function submitGuess() {
+      // 如果正在播放动画，不处理提交
+      if (isAnimating) return;
+      
+      // 获取当前行的单词
+      let guess = "";
+      const row = document.getElementById(`row-${currentRow}`);
+
+      // 只收集已填充的格子内容
+      for (let i = 0; i < currentTile; i++) {
+        const tile = document.getElementById(`tile-${currentRow}-${i}`);
+        if (tile && tile.textContent) {
+          guess += tile.textContent;
+        }
+      }
+
+      // 检查单词是否在全部词库中
+      if (!allWords.includes(guess) && !commonWords.includes(guess) && targetWord !== guess) {
+        showMessage("Word not in word list!");
+        // 抖动效果
+        row.style.animation = "shake 0.5s";
+        setTimeout(() => {
+          row.style.animation = "";
+        }, 500);
+        return;
+      }
+
+      // 检查结果
+      checkGuess(guess);
+    }
+
+    // 检查猜测结果
+    function checkGuess(guess) {
+      // 设置动画状态
+      isAnimating = true;
+
+      // 创建目标单词字母计数
+      const targetCounts = {};
+      for (let i = 0; i < targetWord.length; i++) {
+        const char = targetWord[i];
+        targetCounts[char] = (targetCounts[char] || 0) + 1;
+      }
+
+      // 第1轮：标记正确位置的字母（绿色）
+      const result = Array(guess.length).fill(null);
+      for (let i = 0; i < Math.min(guess.length, targetWord.length); i++) {
+        if (guess[i] === targetWord[i]) {
+          result[i] = 'correct';
+          targetCounts[guess[i]]--;
+        }
+      }
+
+
+      // 第2轮：标记存在但位置错误的字母（黄色）
+      for (let i = 0; i < guess.length; i++) {
+        if (result[i] === null) {
+          if (targetCounts[guess[i]] > 0) {
+            result[i] = 'present';
+            targetCounts[guess[i]]--;
+          }
+        }
+      }
+
+      // 第3轮：标记剩余的字母（灰色或红色）
+      for (let i = 0; i < guess.length; i++) {
+        if (result[i] === null) {
+          if (i >= targetWord.length) {
+            result[i] = 'invalid'; // 超出长度的字母标记为红色
+          } else {
+            result[i] = 'absent'; // 其他未标记的字母标记为灰色
+          }
+        }
+      }
+
+
+      // 显示结果
+      let correctCount = 0;
+      // 添加动画完成计数器
+      let animationCount = 0;
+      
+      // 检查是否所有字母都是绿色且长度小于目标词
+      const allGreen = result.every(r => r === 'correct');
+      const needsQuestionMark = allGreen && guess.length < targetWord.length;
+      
+      // 同时显示所有格子的结果，但要等待动画完成
+      for (let i = 0; i < result.length; i++) {
+        const tile = document.getElementById(`tile-${currentRow}-${i}`);
+        if (result[i]) {
+          tile.classList.add(result[i], 'flip');
+          // 监听动画完成
+          tile.addEventListener('animationend', () => {
+            animationCount++;
+            if (animationCount === result.length + (needsQuestionMark ? 1 : 0)) {
+              // 所有动画完成后，重置动画状态
+              isAnimating = false;
+            }
+          }, { once: true }); // 确保事件监听器只触发一次
+        }
+
+        // 更新虚拟键盘状态 - 修复颜色更新逻辑
+        const keyElement = document.querySelector(`.key[data-key="${guess[i]}"]`);
+        if (guess[i] && keyElement) {
+          // 定义优先级顺序
+          const priority = {
+            'correct': 3,
+            'present': 2,
+            'absent': 1,
+            'invalid': 1
+          };
+          
+          // 获取当前状态的优先级
+          const currentState = keyElement.classList.contains('correct') ? 'correct' :
+                              keyElement.classList.contains('present') ? 'present' :
+                              keyElement.classList.contains('absent') ? 'absent' : null;
+          
+          const currentPriority = currentState ? priority[currentState] : 0;
+          const newPriority = priority[result[i]];
+          
+          // 只有当新状态优先级更高时才更新
+          if (newPriority > currentPriority) {
+            // 移除所有状态类
+            keyElement.classList.remove('correct', 'present', 'absent');
+            // 添加新状态类
+            keyElement.classList.add(result[i] === 'invalid' ? 'absent' : result[i]);
+          }
+        }
+
+        if (result[i] === 'correct') {
+          correctCount++;
+        }
+      }
+
+      // 如果需要添加问号，创建新的问号格子
+      if (needsQuestionMark) {
+        const lastIndex = result.length;
+        const tile = document.createElement('div');
+        tile.classList.add('tile', 'absent', 'flip');
+        tile.id = `tile-${currentRow}-${lastIndex}`;
+        tile.textContent = '?';
+        const row = document.getElementById(`row-${currentRow}`);
+        row.appendChild(tile);
+        
+        // 更新行的网格布局以包含新的问号格子
+        row.style.gridTemplateColumns = `repeat(${result.length + 1}, 1fr)`;
+        
+        // 监听问号格子的动画完成
+        tile.addEventListener('animationend', () => {
+          animationCount++;
+          if (animationCount === result.length + 1) {
+            isAnimating = false;
+          }
+        }, { once: true });
+      }
+
+      // 删除当前行的空白格子
+      removeEmptyTilesInRow(currentRow);
+
+      // 检查是否胜利
+      if (guess === targetWord) {
+        const modeText = isDailyPuzzle ? `Daily Puzzle ${dailyPuzzleDate}` : 'Random Puzzle';
+        showMessage(`Congratulations! You guessed it! [${modeText}]`, 'win');
+        gameOver = true;
+        // 添加分享按钮
+        addSharePuzzleButton();
+        // 只有当是每日谜题且日期是当天时，才记录完成状态
+        if (isDailyPuzzle && dailyPuzzleDate === getCurrentUTC8Date()) {
+          recordPuzzleCompletion();
+        }
+        // 清除保存的游戏状态，因为游戏已经结束
+        clearGameState();
+        isAnimating = false;
+        // 更新按钮状态
+        updateActionButton();
+        return;
+      }
+
+      // 检查是否用尽所有机会
+      if (currentRow === 9) {
+        const modeText = isDailyPuzzle ? `Daily Puzzle ${dailyPuzzleDate}` : 'Random Puzzle';
+        showMessage(`Game over! The correct answer is: ${targetWord} [${modeText}]`, 'lose');
+        gameOver = true;
+        // 添加分享按钮
+        addSharePuzzleButton();
+        // 只有当是每日谜题且日期是当天时，才记录完成状态
+        if (isDailyPuzzle && dailyPuzzleDate === getCurrentUTC8Date()) {
+          recordPuzzleCompletion();
+        }
+        // 清除保存的游戏状态，因为游戏已经结束
+        clearGameState();
+        isAnimating = false;
+        // 更新按钮状态
+        updateActionButton();
+        return;
+      }
+
+      // 准备下一行
+      currentRow++;
+      currentTile = 0;
+      isAnimating = false;
+      
+      // 保存游戏状态
+      saveGameState();
+    }
+
+
+
+    // 生成随机谜题分享链接并分享或复制到剪贴板
+    function copyPuzzleLinkToClipboard() {
+      // 创建链接，每日谜题只需要日期，随机谜题需要使用凯撒密码混淆单词
+      let url;
+      if (isDailyPuzzle) {
+        url = `${window.location.origin}${window.location.pathname}?d=${dailyPuzzleDate}`;
+      } else {
+        const scrambledWord = caesarCipher(targetWord, 3); // 使用位移3的凯撒密码
+        url = `${window.location.origin}${window.location.pathname}?p=${scrambledWord}`;
+      }
+
+      // 生成emoji网格
+      let emojiGrid = `#ANYWORDLE ${isDailyPuzzle ? dailyPuzzleDate : ''}\n`;
+      
+      for (let i = 0; i <= currentRow; i++) {
+        const row = document.getElementById(`row-${i}`);
+        let rowEmojis = "";
+        
+        // 收集所有格子的结果
+        for (let j = 0; j < row.children.length; j++) {
+          const tile = document.getElementById(`tile-${i}-${j}`);
+          if (tile && tile.textContent) {
+            if (tile.classList.contains('correct')) {
+              rowEmojis += "🟩";
+            } else if (tile.classList.contains('present')) {
+              rowEmojis += "🟨";
+            } else if (tile.classList.contains('invalid')) {
+              rowEmojis += "🟥";
+            } else if (tile.classList.contains('absent')) {
+              rowEmojis += "⬜";
+            } else {
+              break;
+            }
+          }
+        }
+        
+        if (rowEmojis) {
+          emojiGrid += rowEmojis + "\n";
+        }
+      }
+      
+      // 添加网址和分享链接
+      emojiGrid += `\n${url}`;
+      
+      // 总是先尝试复制到剪贴板
+      navigator.clipboard.writeText(emojiGrid)
+        .then(() => {
+          // 复制成功后，尝试使用系统分享API
+          if (navigator.share) {
+            return navigator.share({
+              title: '#ANYWORDLE',
+              text: '#ANYWORDLE',
+              url: url
+            });
+          } else {
+            // 如果不支持分享API，显示复制成功消息
+            const originalText = document.getElementById("message").textContent;
+            showMessage("Results and link copied to clipboard!", "win");
+            return new Promise(resolve => {
+              setTimeout(() => {
+                showMessage(originalText, "win");
+                resolve();
+              }, 2000);
+            });
+          }
+        })
+        .then(() => {
+          // 如果分享成功，显示相应消息
+          if (navigator.share) {
+            const originalText = document.getElementById("message").textContent;
+            showMessage("Shared and copied to clipboard!", "win");
+            setTimeout(() => {
+              showMessage(originalText, "win");
+            }, 2000);
+          }
+        })
+        .catch(err => {
+          console.error('Operation failed:', err);
+          fallbackToCopyClipboard(emojiGrid);
+        });
+    }
+
+    // 复制到剪贴板的回退方案
+    function fallbackToCopyClipboard(content) {
+      navigator.clipboard.writeText(content)
+        .then(() => {
+          const originalText = document.getElementById("message").textContent;
+          showMessage("Results and link copied to clipboard!", "win");
+          setTimeout(() => {
+            showMessage(originalText, "win");
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy:', err);
+          showMessage("Failed to copy to clipboard", "lose");
+          setTimeout(() => {
+            const modeText = isDailyPuzzle ? `Daily Puzzle ${dailyPuzzleDate}` : 'Random Puzzle';
+            showMessage(`Congratulations! You guessed it! [${modeText}]`, 'win');
+          }, 2000);
+        });
+    }
+
+    // 凯撒密码加密
+    function caesarCipher(str, shift) {
+      return str.replace(/[A-Z]/g, (char) => {
+        const code = char.charCodeAt(0);
+        // 将字符按指定偏移量移动
+        const shifted = ((code - 65 + shift) % 26) + 65;
+        return String.fromCharCode(shifted);
+      });
+    }
+
+    // 凯撒密码解密
+    function caesarDecipher(str, shift) {
+      return str.replace(/[A-Z]/g, (char) => {
+        const code = char.charCodeAt(0);
+        // 反向移动字符
+        const shifted = ((code - 65 - shift + 26) % 26) + 65;
+        return String.fromCharCode(shifted);
+      });
+    }
+
+    // 出题
+    function generatePuzzle(puzzleWord) {
+      var p= caesarCipher(puzzleWord.toUpperCase(), 3); // 使用凯撒密码加密
+      console.log(`${window.location.origin}${window.location.pathname}?p=` + p);
+    }
+
+    // 显示消息
+    function showMessage(text, className = '') {
+      const messageElement = document.getElementById('message');
+      messageElement.textContent = text;
+      messageElement.className = 'message ' + className;
+    }
+
+    // 从文件加载单词库
+    async function loadWordsFromFile(filePath) {
+      try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+          throw new Error(`Unable to load file: ${filePath}`);
+        }
+        const text = await response.text();
+        // 按行分割并清理数据（去除空行和空白字符，转换为大写）
+        return text.split('\n')
+          .map(word => word.trim().toUpperCase())
+          .filter(word => word.length > 0);
+      } catch (error) {
+        console.error(error);
+        showMessage(`Failed to load word list: ${filePath}`, 'lose');
+        return [];  // 返回空数组作为后备
+      }
+    }
+
+    // 获取当前UTC+8日期字符串 (YYYY-MM-DD)
+    function getCurrentUTC8Date() {
+      const now = new Date();
+      // 转换为UTC+8时间
+      const utc8Time = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+      const year = utc8Time.getUTCFullYear();
+      const month = String(utc8Time.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(utc8Time.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // 检查当日谜题随机是否已完成
+    function isPuzzleCompletedForToday() {
+      const today = getCurrentUTC8Date();
+      const lastCompleted = localStorage.getItem('wordleLastCompleted');
+      const lastPuzzleDate = localStorage.getItem('wordlePuzzleDate');
+
+      // 如果上次完成的日期与当前日期相同，则当日谜题已完成
+      return lastCompleted && lastPuzzleDate === today;
+    }
+
+    // 记录谜题完成状态
+    function recordPuzzleCompletion() {
+      const today = getCurrentUTC8Date();
+      localStorage.setItem('wordleLastCompleted', new Date().toISOString());
+      localStorage.setItem('wordlePuzzleDate', today);
+    }
+
+    // 根据日期获取每日谜题答案
+    function getDailyPuzzleAnswer(dateString, wordList) {
+      // 使用更均匀的哈希算法来选择单词
+      // 这个算法结合了多个技术来获得更好的分布
+      let hash = 0;
+      const len = dateString.length;
+      
+      // 使用不同的质数和位运算组合来提高随机性
+      for (let i = 0; i < len; i++) {
+        const char = dateString.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // 转换为32位整数
+      }
+      
+      // 添加一个额外的步骤来进一步打乱哈希值
+      hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+      hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+      hash = (hash >> 16) ^ hash;
+      
+      // 使用哈希值选择单词列表中的单词
+      const index = Math.abs(hash) % wordList.length;
+      return wordList[index];
+    }
+
+    // 调试功能：在控制台查看接下来10天的每日谜题答案
+    function printNext10DaysAnswers() {
+      console.log("接下来10天的每日谜题答案：");
+      
+      const today = new Date();
+      for (let i = 0; i < 10; i++) {
+        // 计算未来第i天的日期
+        const nextDate = new Date(today);
+        nextDate.setDate(today.getDate() + i);
+        
+        // 格式化为 YYYY-MM-DD 字符串
+        const year = nextDate.getFullYear();
+        const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+        const day = String(nextDate.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        // 获取该日期的每日谜题答案
+        const answer = getDailyPuzzleAnswer(dateString, commonWords);
+        console.log(`${dateString}: ${answer}`);
+      }
+    }
+
+    // 添加分享按钮
+    function addSharePuzzleButton() {
+      // 如果已经存在分享按钮，先移除它
+      const existingContainer = document.querySelector('.share-container');
+      if (existingContainer) {
+        existingContainer.remove();
+      }
+
+      // 创建新的分享按钮容器
+      const shareContainer = document.createElement('div');
+      shareContainer.classList.add('share-container');
+
+      // 创建分享按钮
+      const shareButton = document.createElement('button');
+      shareButton.textContent = 'Share Puzzle';
+      shareButton.classList.add('share');
+      shareButton.addEventListener('click', copyPuzzleLinkToClipboard);
+
+      // 将按钮添加到容器中
+      shareContainer.appendChild(shareButton);
+
+      // 将容器添加到游戏容器中
+      const gameContainer = document.querySelector('.game-container');
+      gameContainer.appendChild(shareContainer);
+    }
+
+    // 重新开始游戏
+    function restartGame() {
+      // 如果是每日谜题且游戏未结束，显示警告
+      if (isDailyPuzzle && !gameOver) {
+        let message = puzzleCompleted ? 
+          "Daily puzzle already completed. Start a random puzzle?" :
+          "Are you sure you want to skip today's daily puzzle?";
+        const confirmRestart = confirm(message);
+        if (!confirmRestart) {
+          return;
+        } else { 
+          recordPuzzleCompletion();
+        }
+      }
+      
+      // 移除分享按钮
+      const shareContainer = document.querySelector('.share-container');
+      if (shareContainer) {
+        shareContainer.remove();
+      }
+
+      // 清除保存的游戏状态
+      clearGameState();
+
+      // 创建新的URL对象
+      const url = new URL(window.location);
+      
+      // 删除p参数（如果存在）
+      url.searchParams.delete('p');
+      url.searchParams.delete('d');
+      
+      // 更新浏览器历史记录，不重新加载页面
+      window.history.replaceState({}, '', url);
+
+      // 重置游戏状态
+      currentRow = 0;
+      currentTile = 0;
+      gameOver = false;
+      isAnimating = false;
+      
+      // 选择目标单词（使用每日谜题）
+      dailyPuzzleDate = getCurrentUTC8Date();
+      puzzleCompleted = isPuzzleCompletedForToday();
+      isDailyPuzzle = true;
+      
+      if (isDailyPuzzle && !puzzleCompleted) {
+        // 使用每日谜题答案
+        targetWord = getDailyPuzzleAnswer(dailyPuzzleDate, commonWords);
+      } else {
+        // 使用随机谜题答案或在每日谜题完成后使用随机谜题
+        targetWord = commonWords[Math.floor(Math.random() * commonWords.length)];
+        isDailyPuzzle = false; // 标记为随机谜题模式
+      }
+
+      // console.log('新目标单词:', targetWord); // 用于调试
+
+      // 清除消息
+      showMessage('');
+
+      // 重新创建游戏板
+      createBoard();
+
+      // 更新游戏模式信息
+      updateGameModeMessage();
+
+      // 重置虚拟键盘颜色
+      document.querySelectorAll('.key').forEach(key => {
+        key.classList.remove('correct', 'present', 'absent');
+        // 移除所有现有的点击事件监听器
+        const clone = key.cloneNode(true);
+        key.parentNode.replaceChild(clone, key);
+        // 添加新的点击事件监听器
+        clone.addEventListener('click', () => {
+          handleVirtualKeyPress(clone.dataset.key);
+        });
+      });
+      
+      // 移除分享按钮（如果存在）
+      const existingContainer = document.querySelector('.share-container');
+      if (existingContainer) {
+        existingContainer.remove();
+      }
+      
+      // 重新绑定键盘事件
+      document.removeEventListener('keydown', handleKeyPress);
+      document.addEventListener('keydown', handleKeyPress);
+    }
+
+    // 放弃游戏
+    function giveUp() {
+      if (!gameOver) {
+        const modeText = isDailyPuzzle ? `Daily Puzzle ${dailyPuzzleDate}` : 'Random Puzzle';
+        showMessage(`You gave up! The correct answer is: ${targetWord} [${modeText}]`, 'lose');
+        gameOver = true;
+        
+        // 放弃时添加分享按钮
+        addSharePuzzleButton();
+        
+        // 只有当是每日谜题且日期是当天时，才记录完成状态
+        if (isDailyPuzzle && dailyPuzzleDate === getCurrentUTC8Date()) {
+          recordPuzzleCompletion();
+        }
+        // 清除保存的游戏状态，因为游戏已经结束
+        clearGameState();
+        // 更新按钮状态
+        updateActionButton();
+      }
+    }
+
+    // 添加抖动动画样式
+    const style = document.createElement("style");
+    style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-5px); }
+                40%, 80% { transform: translateX(5px); }
+            }
+            
+            // 动态调整行的网格布局
+            .row {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(1fr, 1fr));
+                gap: 5px;
+            }
+        `;
+    document.head.appendChild(style);
+
+    // 初始化游戏
+    window.onload = async function () {
+      // 初始化游戏
+      await initGame();
+      
+      // 在控制台打印接下来10天的每日谜题答案
+      // printNext10DaysAnswers();
+
+      // 添加组合按钮（Give Up/Restart）
+      const actionButton = document.createElement('button');
+      actionButton.id = 'actionButton';
+      actionButton.textContent = 'Give Up';
+      actionButton.classList.add('game-button', 'give-up');
+
+      actionButton.addEventListener('click', () => {
+        if (!gameOver) {
+          giveUp();
+        } else {
+          restartGame();
+        }
+      });
+
+      document.body.appendChild(actionButton);
+
+      // 更新按钮状态的函数
+      window.updateActionButton = function() {
+        const button = document.getElementById('actionButton');
+        if (button) {
+          if (gameOver) {
+            button.textContent = 'Restart';
+            button.classList.remove('give-up');
+            button.classList.add('restart');
+          } else {
+            button.textContent = 'Give Up';
+            button.classList.remove('restart');
+            button.classList.add('give-up');
+          }
+        }
+      };
+
+    };
+  </script>
+</body>
+
+</html>
